@@ -24,20 +24,16 @@ let text = r#"
 ## Subheading with `code`
 "#;
 
-let toc = TableOfContents::from_str(text);
-
-for heading in toc.headings() {
-    let indent = (2 * (heading.level() - 1)) as usize;
-    println!(
-        "{:indent$}* [{}]({})",
-        "",
-        heading.text(),
-        heading.anchor(),
-        indent = indent
-    );
+let toc = TableOfContents::new(text);
+assert_eq!(
+    toc.to_cmark(),
+    r#"- [Heading](#heading)
+  - [Subheading](#subheading)
+  - [Subheading with `code`](#subheading-with-code)
+"#
+);
 }
 ```
-
 
 ## License
 

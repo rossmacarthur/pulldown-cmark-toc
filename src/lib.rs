@@ -5,34 +5,28 @@
 //! ```
 //! use pulldown_cmark_toc::TableOfContents;
 //!
-//! let text = r#"
-//! # Heading
+//! let text = "# Heading\n\n## Subheading\n\n## Subheading with `code`\n";
 //!
-//! ## Subheading
-//!
-//! ## Subheading with `code`
-//! "#;
-//!
-//! let toc = TableOfContents::from_str(text);
-//!
-//! for heading in toc.headings() {
-//!     let indent = (2 * (heading.level() - 1)) as usize;
-//!     println!(
-//!         "{:indent$}* [{}]({})",
-//!         "",
-//!         heading.text(),
-//!         heading.anchor(),
-//!         indent = indent
-//!     );
-//! }
+//! let toc = TableOfContents::new(text);
+//! assert_eq!(
+//!     toc.to_cmark(),
+//!     r#"- [Heading](#heading)
+//!   - [Subheading](#subheading)
+//!   - [Subheading with `code`](#subheading-with-code)
+//! "#
+//! );
 //! ```
+
+mod render;
 
 use std::borrow::Borrow;
 use std::slice::Iter;
 
 use lazy_static::lazy_static;
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag};
 use regex::Regex;
+
+pub use render::{ItemSymbol, Options};
 
 /////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -53,9 +47,6 @@ pub struct TableOfContents<'a> {
     headings: Vec<Heading<'a>>,
 }
 
-/// Type alias for `TableOfContents`.
-pub type Toc<'a> = TableOfContents<'a>;
-
 /////////////////////////////////////////////////////////////////////////
 // Implementations
 /////////////////////////////////////////////////////////////////////////
@@ -67,13 +58,13 @@ impl Heading<'_> {
     }
 
     /// The heading level.
-    pub fn level(&self) -> u32 {
-        self.level
+    pub fn level(&self) -> &u32 {
+        &self.level
     }
 
     /// The heading text with all Markdown code stripped out.
     ///
-    /// The output of this this function can used to generate an anchor.
+    /// The output of this this function can be used to generate an anchor.
     pub fn text(&self) -> String {
         let mut buf = String::new();
         for event in self.events() {
@@ -84,7 +75,7 @@ impl Heading<'_> {
         buf
     }
 
-    /// The generated anchor link.
+    /// Generate an anchor link for this heading.
     ///
     /// This is calculated in the same way that GitHub calculates it.
     pub fn anchor(&self) -> String {
@@ -103,11 +94,11 @@ impl<'a> TableOfContents<'a> {
     ///
     /// ```
     /// # use pulldown_cmark_toc::TableOfContents;
-    /// let toc = TableOfContents::from_str("# Heading\n");
+    /// let toc = TableOfContents::new("# Heading\n");
     /// ```
-    pub fn from_str(text: &'a str) -> Self {
-        let events = Parser::new_ext(text, Options::all());
-        Self::from_events(events)
+    pub fn new(text: &'a str) -> Self {
+        let events = Parser::new_ext(text, CmarkOptions::all());
+        Self::new_with_events(events)
     }
 
     /// Construct a new table of contents from parsed Markdown events.
@@ -119,9 +110,9 @@ impl<'a> TableOfContents<'a> {
     /// use pulldown_cmark::Parser;
     ///
     /// let parser = Parser::new("# Heading\n");
-    /// let toc = TableOfContents::from_events(parser);;
+    /// let toc = TableOfContents::new_with_events(parser);;
     /// ```
-    pub fn from_events<I, E>(events: I) -> Self
+    pub fn new_with_events<I, E>(events: I) -> Self
     where
         I: Iterator<Item = E>,
         E: Borrow<Event<'a>>,
@@ -160,7 +151,7 @@ impl<'a> TableOfContents<'a> {
     /// Simple iteration over each heading.
     /// ```
     /// # use pulldown_cmark_toc::TableOfContents;
-    /// let toc = TableOfContents::from_str("# Heading\n");
+    /// let toc = TableOfContents::new("# Heading\n");
     ///
     /// for heading in toc.headings() {
     ///     // use heading
@@ -170,14 +161,71 @@ impl<'a> TableOfContents<'a> {
     /// Filtering out certain heading levels.
     /// ```
     /// # use pulldown_cmark_toc::TableOfContents;
-    /// let toc = TableOfContents::from_str("# Heading\n## Subheading\n");
+    /// let toc = TableOfContents::new("# Heading\n## Subheading\n");
     ///
-    /// for heading in toc.headings().filter(|h| (2..6).contains(&h.level())) {
+    /// for heading in toc.headings().filter(|h| (2..6).contains(h.level())) {
     ///     // use heading
     /// }
     /// ```
     pub fn headings(&self) -> Iter<Heading> {
         self.headings.iter()
+    }
+
+    /// Render the table of contents as Markdown.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use pulldown_cmark_toc::TableOfContents;
+    /// let toc = TableOfContents::new("# Heading\n## Subheading\n");
+    /// assert_eq!(
+    ///     toc.to_cmark(),
+    ///     "- [Heading](#heading)\n  - [Subheading](#subheading)\n"
+    /// );
+    /// ```
+    #[must_use]
+    pub fn to_cmark(&self) -> String {
+        self.to_cmark_with_options(Options::default())
+    }
+
+    /// Render the table of contents as Markdown with extra options.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use pulldown_cmark_toc::{ItemSymbol, Options, TableOfContents};
+    /// let toc = TableOfContents::new("# Heading\n## Subheading\n");
+    /// let options = Options::default()
+    ///     .item_symbol(ItemSymbol::Asterisk)
+    ///     .levels(2..=6)
+    ///     .indent(4);
+    /// assert_eq!(
+    ///     toc.to_cmark_with_options(options),
+    ///     "* [Subheading](#subheading)\n"
+    /// );
+    /// ```
+    #[must_use]
+    pub fn to_cmark_with_options(&self, options: Options) -> String {
+        let Options {
+            item_symbol,
+            levels,
+            indent,
+        } = options;
+
+        let mut buf = String::new();
+        for heading in self.headings().filter(|h| levels.contains(h.level())) {
+            let title = crate::render::to_cmark(heading.events());
+            let indent = indent * (heading.level() - levels.start()) as usize;
+            buf.push_str(&format!(
+                "{:indent$}{} [{}](#{})\n",
+                "",
+                item_symbol,
+                title,
+                heading.anchor(),
+                indent = indent
+            ))
+        }
+        buf
     }
 }
 
@@ -225,8 +273,8 @@ mod tests {
     }
 
     #[test]
-    fn toc_from_str() {
-        let toc = TableOfContents::from_str("# Heading\n\n## `Another` heading\n");
+    fn toc_new() {
+        let toc = TableOfContents::new("# Heading\n\n## `Another` heading\n");
         assert_eq!(toc.headings[0].events, [Text(Borrowed("Heading"))]);
         assert_eq!(toc.headings[0].level, 1);
         assert_eq!(
