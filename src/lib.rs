@@ -1,3 +1,32 @@
+//! Generate a table of contents from a Markdown document.
+//!
+//! # Examples
+//!
+//! ```
+//! use pulldown_cmark_toc::TableOfContents;
+//!
+//! let text = r#"
+//! # Heading
+//!
+//! ## Subheading
+//!
+//! ## Subheading with `code`
+//! "#;
+//!
+//! let toc = TableOfContents::from_str(text);
+//!
+//! for heading in toc.headings() {
+//!     let indent = (2 * (heading.level() - 1)) as usize;
+//!     println!(
+//!         "{:indent$}* [{}]({})",
+//!         "",
+//!         heading.text(),
+//!         heading.anchor(),
+//!         indent = indent
+//!     );
+//! }
+//! ```
+
 use std::borrow::Borrow;
 use std::slice::Iter;
 
@@ -23,6 +52,9 @@ pub struct Heading<'a> {
 pub struct TableOfContents<'a> {
     headings: Vec<Heading<'a>>,
 }
+
+/// Type alias for `TableOfContents`.
+pub type Toc<'a> = TableOfContents<'a>;
 
 /////////////////////////////////////////////////////////////////////////
 // Implementations
@@ -66,12 +98,29 @@ impl Heading<'_> {
 
 impl<'a> TableOfContents<'a> {
     /// Construct a new table of contents from Markdown text.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use pulldown_cmark_toc::TableOfContents;
+    /// let toc = TableOfContents::from_str("# Heading\n");
+    /// ```
     pub fn from_str(text: &'a str) -> Self {
         let events = Parser::new_ext(text, Options::all());
         Self::from_events(events)
     }
 
     /// Construct a new table of contents from parsed Markdown events.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use pulldown_cmark_toc::TableOfContents;
+    /// use pulldown_cmark::Parser;
+    ///
+    /// let parser = Parser::new("# Heading\n");
+    /// let toc = TableOfContents::from_events(parser);;
+    /// ```
     pub fn from_events<I, E>(events: I) -> Self
     where
         I: Iterator<Item = E>,
@@ -105,6 +154,28 @@ impl<'a> TableOfContents<'a> {
     }
 
     /// Iterate over the headings in this table of contents.
+    ///
+    /// # Examples
+    ///
+    /// Simple iteration over each heading.
+    /// ```
+    /// # use pulldown_cmark_toc::TableOfContents;
+    /// let toc = TableOfContents::from_str("# Heading\n");
+    ///
+    /// for heading in toc.headings() {
+    ///     // use heading
+    /// }
+    /// ```
+    ///
+    /// Filtering out certain heading levels.
+    /// ```
+    /// # use pulldown_cmark_toc::TableOfContents;
+    /// let toc = TableOfContents::from_str("# Heading\n## Subheading\n");
+    ///
+    /// for heading in toc.headings().filter(|h| (2..6).contains(&h.level())) {
+    ///     // use heading
+    /// }
+    /// ```
     pub fn headings(&self) -> Iter<Heading> {
         self.headings.iter()
     }
