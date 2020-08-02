@@ -3,8 +3,14 @@ name = "pulldown-cmark-toc"
 version = "0.1.0"
 authors = ["Ross MacArthur <ross@macarthur.io>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Generate a table of contents from a Markdown document."
+documentation = "https://github.com/rossmacarthur/pulldown-cmark-toc"
+readme = "README.md"
+homepage = "https://github.com/rossmacarthur/pulldown-cmark-toc"
+repository = "https://github.com/rossmacarthur/pulldown-cmark-toc"
+license = "MIT OR Apache-2.0"
+keywords = ["markdown", "commonmark", "table", "contents"]
+categories = ["text-processing"]
 
 [dependencies]
 lazy_static = "1.4.0"
