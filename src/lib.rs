@@ -20,6 +20,7 @@
 mod render;
 
 use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::slice::Iter;
 
 use lazy_static::lazy_static;
@@ -212,18 +213,33 @@ impl<'a> TableOfContents<'a> {
             indent,
         } = options;
 
+        // this is to record duplicates
+        let mut counts = HashMap::new();
+
         let mut buf = String::new();
         for heading in self.headings().filter(|h| levels.contains(h.level())) {
             let title = crate::render::to_cmark(heading.events());
+            let anchor = heading.anchor();
             let indent = indent * (heading.level() - levels.start()) as usize;
+
+            // make sure the anchor is unique
+            let i = counts
+                .entry(anchor.clone())
+                .and_modify(|i| *i += 1)
+                .or_insert(0);
+            let anchor = match *i {
+                0 => anchor,
+                i => format!("{}-{}", anchor, i),
+            };
+
             buf.push_str(&format!(
                 "{:indent$}{} [{}](#{})\n",
                 "",
                 item_symbol,
                 title,
-                heading.anchor(),
-                indent = indent
-            ))
+                anchor,
+                indent = indent,
+            ));
         }
         buf
     }
@@ -283,5 +299,14 @@ mod tests {
         );
         assert_eq!(toc.headings[1].level, 2);
         assert_eq!(toc.headings.len(), 2);
+    }
+
+    #[test]
+    fn toc_to_cmark_unique_anchors() {
+        let toc = TableOfContents::new("# Heading\n\n# Heading\n\n# `Heading`");
+        assert_eq!(
+            toc.to_cmark(),
+            "- [Heading](#heading)\n- [Heading](#heading-1)\n- [`Heading`](#heading-2)\n"
+        )
     }
 }
