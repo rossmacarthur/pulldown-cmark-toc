@@ -1,10 +1,11 @@
 //! Render a limited set of Markdown events back to Markdown.
 
 use std::borrow::Borrow;
-use std::fmt::{self, Write};
+use std::fmt;
+use std::fmt::Write;
 use std::ops::RangeInclusive;
 
-use pulldown_cmark::{Event, Tag};
+use pulldown_cmark::{Event, HeadingLevel, Tag};
 
 /// Which symbol to use when rendering Markdown list items.
 pub enum ItemSymbol {
@@ -19,16 +20,17 @@ pub enum ItemSymbol {
 /// # Examples
 ///
 /// ```
-/// # use pulldown_cmark_toc::{ItemSymbol, Options};
+/// # use pulldown_cmark_toc::{HeadingLevel, ItemSymbol, Options};
+///
 /// let options = Options::default()
 ///     .item_symbol(ItemSymbol::Asterisk)
-///     .levels(2..=6)
+///     .levels(HeadingLevel::H2..=HeadingLevel::H6)
 ///     .indent(4);
 ///
 /// ```
 pub struct Options {
     pub(crate) item_symbol: ItemSymbol,
-    pub(crate) levels: RangeInclusive<u32>,
+    pub(crate) levels: RangeInclusive<HeadingLevel>,
     pub(crate) indent: usize,
 }
 
@@ -69,7 +71,7 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             item_symbol: ItemSymbol::Hyphen,
-            levels: (1..=6),
+            levels: (HeadingLevel::H1..=HeadingLevel::H6),
             indent: 2,
         }
     }
@@ -83,7 +85,7 @@ impl Options {
     }
 
     /// Only levels in the given range will be rendered.
-    pub fn levels(mut self, levels: RangeInclusive<u32>) -> Self {
+    pub fn levels(mut self, levels: RangeInclusive<HeadingLevel>) -> Self {
         self.levels = levels;
         self
     }

@@ -21,11 +21,12 @@ mod render;
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::slice::Iter;
 
-use lazy_static::lazy_static;
+pub use pulldown_cmark::HeadingLevel;
 use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag};
-use regex::Regex;
+use regex_macro::regex;
 
 pub use render::{ItemSymbol, Options};
 
@@ -39,7 +40,7 @@ pub struct Heading<'a> {
     /// The Markdown events between the heading tags.
     events: Vec<Event<'a>>,
     /// The heading level.
-    level: u32,
+    level: HeadingLevel,
 }
 
 /// Represents a Table of Contents.
@@ -59,8 +60,8 @@ impl Heading<'_> {
     }
 
     /// The heading level.
-    pub fn level(&self) -> &u32 {
-        &self.level
+    pub fn level(&self) -> HeadingLevel {
+        self.level
     }
 
     /// The heading text with all Markdown code stripped out.
@@ -70,7 +71,7 @@ impl Heading<'_> {
         let mut buf = String::new();
         for event in self.events() {
             if let Event::Text(s) | Event::Code(s) = event {
-                buf.push_str(&s);
+                buf.push_str(s);
             }
         }
         buf
@@ -80,10 +81,8 @@ impl Heading<'_> {
     ///
     /// This is calculated in the same way that GitHub calculates it.
     pub fn anchor(&self) -> String {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"[^\w\- ]").unwrap();
-        }
-        RE.replace_all(&self.text().to_ascii_lowercase().replace(" ", "-"), "")
+        regex!(r"[^\w\- ]")
+            .replace_all(&self.text().to_ascii_lowercase().replace(" ", "-"), "")
             .into_owned()
     }
 }
@@ -118,19 +117,19 @@ impl<'a> TableOfContents<'a> {
         I: Iterator<Item = E>,
         E: Borrow<Event<'a>>,
     {
-        let mut current: Option<Heading> = None;
         let mut headings = Vec::new();
+        let mut current: Option<Heading> = None;
 
         for event in events {
             let event = event.borrow();
             match &*event {
-                Event::Start(Tag::Heading(level)) => {
+                Event::Start(Tag::Heading(level, _, _)) => {
                     current = Some(Heading {
                         events: Vec::new(),
                         level: *level,
                     });
                 }
-                Event::End(Tag::Heading(level)) => {
+                Event::End(Tag::Heading(level, _, _)) => {
                     let heading = current.take().unwrap();
                     assert_eq!(heading.level, *level);
                     headings.push(heading);
@@ -161,10 +160,10 @@ impl<'a> TableOfContents<'a> {
     ///
     /// Filtering out certain heading levels.
     /// ```
-    /// # use pulldown_cmark_toc::TableOfContents;
+    /// # use pulldown_cmark_toc::{HeadingLevel, TableOfContents};
     /// let toc = TableOfContents::new("# Heading\n## Subheading\n");
     ///
-    /// for heading in toc.headings().filter(|h| (2..6).contains(h.level())) {
+    /// for heading in toc.headings().filter(|h| h.level() >= HeadingLevel::H2) {
     ///     // use heading
     /// }
     /// ```
@@ -194,11 +193,12 @@ impl<'a> TableOfContents<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use pulldown_cmark_toc::{ItemSymbol, Options, TableOfContents};
+    /// # use pulldown_cmark_toc::{HeadingLevel, ItemSymbol, Options, TableOfContents};
+    ///
     /// let toc = TableOfContents::new("# Heading\n## Subheading\n");
     /// let options = Options::default()
     ///     .item_symbol(ItemSymbol::Asterisk)
-    ///     .levels(2..=6)
+    ///     .levels(HeadingLevel::H2..=HeadingLevel::H6)
     ///     .indent(4);
     /// assert_eq!(
     ///     toc.to_cmark_with_options(options),
@@ -217,10 +217,10 @@ impl<'a> TableOfContents<'a> {
         let mut counts = HashMap::new();
 
         let mut buf = String::new();
-        for heading in self.headings().filter(|h| levels.contains(h.level())) {
+        for heading in self.headings().filter(|h| levels.contains(&h.level())) {
             let title = crate::render::to_cmark(heading.events());
             let anchor = heading.anchor();
-            let indent = indent * (heading.level() - levels.start()) as usize;
+            let indent = indent * (heading.level() as usize - *levels.start() as usize);
 
             // make sure the anchor is unique
             let i = counts
@@ -232,14 +232,16 @@ impl<'a> TableOfContents<'a> {
                 i => format!("{}-{}", anchor, i),
             };
 
-            buf.push_str(&format!(
-                "{:indent$}{} [{}](#{})\n",
+            writeln!(
+                &mut buf,
+                "{:indent$}{} [{}](#{})",
                 "",
                 item_symbol,
                 title,
                 anchor,
                 indent = indent,
-            ));
+            )
+            .unwrap();
         }
         buf
     }
@@ -260,7 +262,7 @@ mod tests {
     fn heading_text_with_code() {
         let heading = Heading {
             events: vec![Code(Borrowed("Another")), Text(Borrowed(" heading"))],
-            level: 1,
+            level: HeadingLevel::H1,
         };
         assert_eq!(heading.text(), "Another heading");
     }
@@ -268,7 +270,10 @@ mod tests {
     #[test]
     fn heading_text_with_links() {
         let events = Parser::new("Here [TOML](https://toml.io)").collect();
-        let heading = Heading { events, level: 1 };
+        let heading = Heading {
+            events,
+            level: HeadingLevel::H1,
+        };
         assert_eq!(heading.text(), "Here TOML");
     }
 
@@ -276,7 +281,7 @@ mod tests {
     fn heading_anchor_with_code() {
         let heading = Heading {
             events: vec![Code(Borrowed("Another")), Text(Borrowed(" heading"))],
-            level: 1,
+            level: HeadingLevel::H1,
         };
         assert_eq!(heading.anchor(), "another-heading");
     }
@@ -284,7 +289,10 @@ mod tests {
     #[test]
     fn heading_anchor_with_links() {
         let events = Parser::new("Here [TOML](https://toml.io)").collect();
-        let heading = Heading { events, level: 1 };
+        let heading = Heading {
+            events,
+            level: HeadingLevel::H1,
+        };
         assert_eq!(heading.anchor(), "here-toml");
     }
 
@@ -292,12 +300,12 @@ mod tests {
     fn toc_new() {
         let toc = TableOfContents::new("# Heading\n\n## `Another` heading\n");
         assert_eq!(toc.headings[0].events, [Text(Borrowed("Heading"))]);
-        assert_eq!(toc.headings[0].level, 1);
+        assert_eq!(toc.headings[0].level, HeadingLevel::H1);
         assert_eq!(
             toc.headings[1].events,
             [Code(Borrowed("Another")), Text(Borrowed(" heading"))]
         );
-        assert_eq!(toc.headings[1].level, 2);
+        assert_eq!(toc.headings[1].level, HeadingLevel::H2);
         assert_eq!(toc.headings.len(), 2);
     }
 
