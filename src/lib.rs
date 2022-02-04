@@ -82,7 +82,7 @@ impl Heading<'_> {
     /// This is calculated in the same way that GitHub calculates it.
     pub fn anchor(&self) -> String {
         regex!(r"[^\w\- ]")
-            .replace_all(&self.text().to_ascii_lowercase().replace(" ", "-"), "")
+            .replace_all(&self.text().to_ascii_lowercase().replace(' ', "-"), "")
             .into_owned()
     }
 }
@@ -233,7 +233,7 @@ impl<'a> TableOfContents<'a> {
             };
 
             writeln!(
-                &mut buf,
+                buf,
                 "{:indent$}{} [{}](#{})",
                 "",
                 item_symbol,

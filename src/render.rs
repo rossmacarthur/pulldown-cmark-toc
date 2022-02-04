@@ -79,18 +79,21 @@ impl Default for Options {
 
 impl Options {
     /// The symbol to use for Table of Contents list items.
+    #[must_use]
     pub fn item_symbol(mut self, item_symbol: ItemSymbol) -> Self {
         self.item_symbol = item_symbol;
         self
     }
 
     /// Only levels in the given range will be rendered.
+    #[must_use]
     pub fn levels(mut self, levels: RangeInclusive<HeadingLevel>) -> Self {
         self.levels = levels;
         self
     }
 
     /// The number of spaces to use for indentation between heading levels.
+    #[must_use]
     pub fn indent(mut self, indent: usize) -> Self {
         self.indent = indent;
         self
