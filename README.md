@@ -1,5 +1,8 @@
 # pulldown-cmark-toc
 
+[![Crates.io version](https://img.shields.io/crates/v/pulldown-cmark-toc.svg)](https://crates.io/crates/pulldown-cmark-toc)
+[![Build status](https://img.shields.io/github/workflow/status/rossmacarthur/pulldown-cmark-toc/build/trunk)](https://github.com/rossmacarthur/pulldown-cmark-toc/actions?query=workflow%3Abuild)
+
 Generate a table of contents from a Markdown document.
 
 ## Getting started
