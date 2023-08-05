@@ -4,14 +4,12 @@ version = "0.1.1"
 authors = ["Ross MacArthur <ross@macarthur.io>"]
 edition = "2018"
 description = "Generate a table of contents from a Markdown document."
-documentation = "https://github.com/rossmacarthur/pulldown-cmark-toc"
 readme = "README.md"
-homepage = "https://github.com/rossmacarthur/pulldown-cmark-toc"
 repository = "https://github.com/rossmacarthur/pulldown-cmark-toc"
 license = "MIT OR Apache-2.0"
 keywords = ["markdown", "commonmark", "table", "contents"]
 categories = ["text-processing"]
 
 [dependencies]
-pulldown-cmark = "0.9"
-regex-macro = "0.2"
+pulldown-cmark = "0.9.3"
+regex-macro = "0.2.0"

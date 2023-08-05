@@ -1,17 +1,17 @@
 # pulldown-cmark-toc
 
-[![Crates.io version](https://img.shields.io/crates/v/pulldown-cmark-toc.svg)](https://crates.io/crates/pulldown-cmark-toc)
-[![Build status](https://img.shields.io/github/workflow/status/rossmacarthur/pulldown-cmark-toc/build/trunk)](https://github.com/rossmacarthur/pulldown-cmark-toc/actions?query=workflow%3Abuild)
+[![Crates.io Version](https://badgers.space/crates/version/pulldown-cmark-toc.svg)](https://crates.io/crates/pulldown-cmark-toc)
+[![Docs.rs Latest](https://badgers.space/badge/docs.rs/latest/blue)](https://docs.rs/pulldown-cmark-toc)
+[![Build Status](https://badgers.space/github/checks/rossmacarthur/pulldown-cmark-toc/trunk?label=build)](https://github.com/rossmacarthur/pulldown-cmark-toc/actions/workflows/build.yaml?branch=trunk)
 
 Generate a table of contents from a Markdown document.
 
 ## Getting started
 
-Add the following dependency to your `Cargo.toml`.
+Add the `pulldown-cmark-toc` to your `Cargo.toml`.
 
-```toml
-[dependencies]
-pulldown-cmark-toc = "0.1"
+```
+cargo add pulldown-cmark-toc
 ```
 
 ## Usage

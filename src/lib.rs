@@ -122,7 +122,7 @@ impl<'a> TableOfContents<'a> {
 
         for event in events {
             let event = event.borrow();
-            match &*event {
+            match event {
                 Event::Start(Tag::Heading(level, _, _)) => {
                     current = Some(Heading {
                         events: Vec::new(),
