@@ -7,6 +7,8 @@ use std::ops::RangeInclusive;
 
 use pulldown_cmark::{Event, HeadingLevel, Tag};
 
+use crate::slug::{GitHubSlugifier, Slugify};
+
 /// Which symbol to use when rendering Markdown list items.
 pub enum ItemSymbol {
     /// `-`
@@ -32,6 +34,7 @@ pub struct Options {
     pub(crate) item_symbol: ItemSymbol,
     pub(crate) levels: RangeInclusive<HeadingLevel>,
     pub(crate) indent: usize,
+    pub(crate) slugifier: Box<dyn Slugify>,
 }
 
 pub(crate) fn to_cmark<'a, I, E>(events: I) -> String
@@ -73,6 +76,7 @@ impl Default for Options {
             item_symbol: ItemSymbol::Hyphen,
             levels: (HeadingLevel::H1..=HeadingLevel::H6),
             indent: 2,
+            slugifier: Box::new(GitHubSlugifier::default()),
         }
     }
 }
@@ -96,6 +100,13 @@ impl Options {
     #[must_use]
     pub fn indent(mut self, indent: usize) -> Self {
         self.indent = indent;
+        self
+    }
+
+    /// The slugifier to use for the heading anchors.
+    #[must_use]
+    pub fn slugifier(mut self, slugifier: Box<dyn Slugify>) -> Self {
+        self.slugifier = slugifier;
         self
     }
 }
