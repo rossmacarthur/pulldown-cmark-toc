@@ -1,6 +1,6 @@
 # pulldown-cmark-toc
 
-[![Crates.io Version](https://badgers.space/crates/version/pulldown-cmark-toc.svg)](https://crates.io/crates/pulldown-cmark-toc)
+[![Crates.io Version](https://badgers.space/crates/version/pulldown-cmark-toc)](https://crates.io/crates/pulldown-cmark-toc)
 [![Docs.rs Latest](https://badgers.space/badge/docs.rs/latest/blue)](https://docs.rs/pulldown-cmark-toc)
 [![Build Status](https://badgers.space/github/checks/rossmacarthur/pulldown-cmark-toc/trunk?label=build)](https://github.com/rossmacarthur/pulldown-cmark-toc/actions/workflows/build.yaml?branch=trunk)
 
