@@ -24,9 +24,10 @@ use std::collections::HashMap;
 use std::fmt::Write;
 use std::slice::Iter;
 
+use once_cell::sync::Lazy;
 pub use pulldown_cmark::HeadingLevel;
 use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag};
-use regex_macro::regex;
+use regex::Regex;
 
 pub use render::{ItemSymbol, Options};
 
@@ -81,8 +82,8 @@ impl Heading<'_> {
     ///
     /// This is calculated in the same way that GitHub calculates it.
     pub fn anchor(&self) -> String {
-        regex!(r"[^\w\- ]")
-            .replace_all(&self.text().to_ascii_lowercase().replace(' ', "-"), "")
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\w\- ]").unwrap());
+        RE.replace_all(&self.text().to_ascii_lowercase().replace(' ', "-"), "")
             .into_owned()
     }
 }
