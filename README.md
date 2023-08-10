@@ -5,6 +5,8 @@
 [![Build Status](https://badgers.space/github/checks/rossmacarthur/pulldown-cmark-toc/trunk?label=build)](https://github.com/rossmacarthur/pulldown-cmark-toc/actions/workflows/build.yaml?branch=trunk)
 
 Generate a table of contents from a Markdown document.
+By default the heading anchor calculation (aka the "slugification")
+is done in a way that attempts to mimic GitHub's (undocumented) behavior.
 
 ## Getting started
 

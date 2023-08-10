@@ -1,5 +1,9 @@
 //! Generate a table of contents from a Markdown document.
 //!
+//! By default the heading anchor calculation (aka the "slugification")
+//! is done in a way that attempts to mimic GitHub's (undocumented) behavior.
+//! (Though you can customize this with your own [`slug::Slugify`] implementation).
+//!
 //! # Examples
 //!
 //! ```
