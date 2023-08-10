@@ -92,7 +92,16 @@ impl<'a> TableOfContents<'a> {
     /// let toc = TableOfContents::new("# Heading\n");
     /// ```
     pub fn new(text: &'a str) -> Self {
-        let events = Parser::new_ext(text, CmarkOptions::all());
+        // We are not enabling all options since we want to mimic
+        // GitHub's behavior as closely as possible by default.
+        // And e.g. enabling heading attributes could result in wrong anchors
+        // or enabling smart punctuation would result in inconsistent rendering.
+        let mut options = CmarkOptions::empty();
+        options.insert(CmarkOptions::ENABLE_STRIKETHROUGH);
+        options.insert(CmarkOptions::ENABLE_FOOTNOTES);
+        // Not enabling tables and tasklists since they cannot have any
+        // effect on headings (which are the only events we care about).
+        let events = Parser::new_ext(text, options);
         Self::new_with_events(events)
     }
 
@@ -272,6 +281,18 @@ mod tests {
         );
         assert_eq!(toc.headings[1].level, HeadingLevel::H2);
         assert_eq!(toc.headings.len(), 2);
+    }
+
+    #[test]
+    fn toc_new_does_not_enable_smart_punctuation() {
+        let toc = TableOfContents::new("# What's the deal with ellipsis ...?\n");
+        assert_eq!(toc.headings[0].text(), "What's the deal with ellipsis ...?");
+    }
+
+    #[test]
+    fn toc_new_does_not_enable_heading_attributes() {
+        let toc = TableOfContents::new("# text { #id .class1 .class2 }\n");
+        assert_eq!(toc.headings[0].text(), "text { #id .class1 .class2 }");
     }
 
     #[test]
