@@ -18,18 +18,17 @@
 //! ```
 
 mod render;
+mod slug;
 
 use std::borrow::Borrow;
-use std::collections::HashMap;
 use std::fmt::Write;
 use std::slice::Iter;
 
-use once_cell::sync::Lazy;
 pub use pulldown_cmark::HeadingLevel;
 use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag};
-use regex::Regex;
 
 pub use render::{ItemSymbol, Options};
+pub use slug::{GitHubSlugifier, Slugify};
 
 /////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -76,15 +75,6 @@ impl Heading<'_> {
             }
         }
         buf
-    }
-
-    /// Generate an anchor link for this heading.
-    ///
-    /// This is calculated in the same way that GitHub calculates it.
-    pub fn anchor(&self) -> String {
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\w\- ]").unwrap());
-        RE.replace_all(&self.text().to_ascii_lowercase().replace(' ', "-"), "")
-            .into_owned()
     }
 }
 
@@ -212,26 +202,15 @@ impl<'a> TableOfContents<'a> {
             item_symbol,
             levels,
             indent,
+            slugifier: mut slugger,
         } = options;
-
-        // this is to record duplicates
-        let mut counts = HashMap::new();
 
         let mut buf = String::new();
         for heading in self.headings().filter(|h| levels.contains(&h.level())) {
             let title = crate::render::to_cmark(heading.events());
-            let anchor = heading.anchor();
             let indent = indent * (heading.level() as usize - *levels.start() as usize);
 
             // make sure the anchor is unique
-            let i = counts
-                .entry(anchor.clone())
-                .and_modify(|i| *i += 1)
-                .or_insert(0);
-            let anchor = match *i {
-                0 => anchor,
-                i => format!("{}-{}", anchor, i),
-            };
 
             writeln!(
                 buf,
@@ -239,7 +218,7 @@ impl<'a> TableOfContents<'a> {
                 "",
                 item_symbol,
                 title,
-                anchor,
+                slugger.slugify(&heading.text()),
                 indent = indent,
             )
             .unwrap();
@@ -276,25 +255,6 @@ mod tests {
             level: HeadingLevel::H1,
         };
         assert_eq!(heading.text(), "Here TOML");
-    }
-
-    #[test]
-    fn heading_anchor_with_code() {
-        let heading = Heading {
-            events: vec![Code(Borrowed("Another")), Text(Borrowed(" heading"))],
-            level: HeadingLevel::H1,
-        };
-        assert_eq!(heading.anchor(), "another-heading");
-    }
-
-    #[test]
-    fn heading_anchor_with_links() {
-        let events = Parser::new("Here [TOML](https://toml.io)").collect();
-        let heading = Heading {
-            events,
-            level: HeadingLevel::H1,
-        };
-        assert_eq!(heading.anchor(), "here-toml");
     }
 
     #[test]
