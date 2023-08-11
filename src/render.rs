@@ -76,7 +76,7 @@ impl Default for Options {
             item_symbol: ItemSymbol::Hyphen,
             levels: (HeadingLevel::H1..=HeadingLevel::H6),
             indent: 2,
-            slugifier: Box::new(GitHubSlugifier::default()),
+            slugifier: Box::<GitHubSlugifier>::default(),
         }
     }
 }
