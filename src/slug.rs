@@ -25,7 +25,7 @@ impl Slugify for GitHubSlugifier {
     fn slugify<'a>(&mut self, str: &'a str) -> Cow<'a, str> {
         static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\w\- ]").unwrap());
         let anchor = RE
-            .replace_all(&str.to_ascii_lowercase().replace(' ', "-"), "")
+            .replace_all(&str.to_lowercase().replace(' ', "-"), "")
             .into_owned();
 
         let i = self
@@ -73,5 +73,10 @@ mod tests {
             GitHubSlugifier::default().slugify(&heading.text()),
             "here-toml"
         );
+    }
+
+    #[test]
+    fn github_slugger_non_ascii_lowercase() {
+        assert_eq!(GitHubSlugifier::default().slugify("Привет"), "привет");
     }
 }
