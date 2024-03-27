@@ -29,7 +29,7 @@ use std::fmt::Write;
 use std::slice::Iter;
 
 pub use pulldown_cmark::HeadingLevel;
-use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag};
+use pulldown_cmark::{Event, Options as CmarkOptions, Parser, Tag, TagEnd};
 
 pub use render::{ItemSymbol, Options};
 pub use slug::{GitHubSlugifier, Slugify};
@@ -127,13 +127,13 @@ impl<'a> TableOfContents<'a> {
         for event in events {
             let event = event.borrow();
             match event {
-                Event::Start(Tag::Heading(level, _, _)) => {
+                Event::Start(Tag::Heading { level, .. }) => {
                     current = Some(Heading {
                         events: Vec::new(),
                         level: *level,
                     });
                 }
-                Event::End(Tag::Heading(level, _, _)) => {
+                Event::End(TagEnd::Heading(level)) => {
                     let heading = current.take().unwrap();
                     assert_eq!(heading.level, *level);
                     headings.push(heading);
