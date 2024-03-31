@@ -5,7 +5,7 @@ use std::fmt;
 use std::fmt::Write;
 use std::ops::RangeInclusive;
 
-use pulldown_cmark::{Event, HeadingLevel, Tag};
+use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 use crate::slug::{GitHubSlugifier, Slugify};
 
@@ -46,8 +46,8 @@ where
     for event in events {
         let event = event.borrow();
         match event {
-            Event::Start(Tag::Emphasis) | Event::End(Tag::Emphasis) => buf.push('*'),
-            Event::Start(Tag::Strong) | Event::End(Tag::Strong) => buf.push_str("**"),
+            Event::Start(Tag::Emphasis) | Event::End(TagEnd::Emphasis) => buf.push('*'),
+            Event::Start(Tag::Strong) | Event::End(TagEnd::Strong) => buf.push_str("**"),
             Event::Text(s) => buf.push_str(s),
             Event::Code(s) => {
                 buf.push('`');
