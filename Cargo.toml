@@ -11,5 +11,5 @@ keywords = ["toc", "markdown", "commonmark", "pulldown-cmark", "github"]
 categories = ["text-processing"]
 
 [dependencies]
-pulldown-cmark = { version = "0.12", default-features = false }
+pulldown-cmark = { version = "0.13", default-features = false }
 regex = "1.9.3"
