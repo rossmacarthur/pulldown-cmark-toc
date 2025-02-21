@@ -1,6 +1,5 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, sync::LazyLock};
 
-use once_cell::sync::Lazy;
 use regex::Regex;
 
 /// A trait to specify the anchor calculation.
@@ -23,7 +22,7 @@ pub struct GitHubSlugifier {
 
 impl Slugify for GitHubSlugifier {
     fn slugify<'a>(&mut self, str: &'a str) -> Cow<'a, str> {
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\w\- ]").unwrap());
+        static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[^\w\- ]").unwrap());
         let anchor = RE
             .replace_all(&str.to_lowercase().replace(' ', "-"), "")
             .into_owned();
