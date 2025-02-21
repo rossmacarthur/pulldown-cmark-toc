@@ -13,4 +13,4 @@ categories = ["text-processing"]
 [dependencies]
 once_cell = "1.18.0"
 pulldown-cmark = { version = "0.12", default-features = false }
-regex = "1.9.3"
+regex = "1.11.1"
