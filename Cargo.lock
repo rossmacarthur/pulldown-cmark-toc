@@ -36,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark-toc"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "pulldown-cmark",
  "regex",
